@@ -72,7 +72,36 @@ void first_pass() {
   //in order to use name and num_frames
   //they must be extern variables
   extern int num_frames;
-  extern char name[128]; 
+  extern char name[128];
+
+  int frame = 0;
+  int basename = 0;
+  int vary = 0;
+
+  int i;
+  for (i = 0; i < lastop; i++) {
+    if (op[i].opcode == FRAMES) {
+      num_frames = op[i].op.frames.num_frames;
+      frame++;
+    }
+    else if (op[i].opcode == BASENAME) {
+      strcpy(name, op[i].op.basename.p->name);
+      basename++;
+    }
+    else if (op[i].opcode == VARY) {
+      vary++;
+    }
+  }
+
+  if (vary && !frame) {
+    printf("Can't vary without frames");
+    exit(0);
+  }
+  else if (frame && !basename) {
+    strcpy(name, "animation");
+    printf("Basename not specified, 'animation' being used");
+
+  }
 
   return;
 }
@@ -99,7 +128,36 @@ void first_pass() {
   jdyrlandweaver
   ====================*/
 struct vary_node ** second_pass() {
-  return NULL;
+  struct vary_node ** frames = malloc(sizeof(struct vary_node *) * num_frames);
+  
+  int i, j;
+  for (i = 0; i < num_frames; i++ ) {
+    
+    struct vary_node * top = NULL;
+    
+    for ( j = 0; j < lastop; j++ ) {
+      
+      if ( op[j].opcode == VARY &&
+	   op[j].op.vary.start_frame <= i &&
+	   op[j].op.vary.end_frame >= i ) {
+	
+	int start = op[j].op.vary.start_frame;
+	int end = op[j].op.vary.end_frame;
+	float percent = (i - start) / (double) (end - start);
+	
+	struct vary_node * node = (struct vary_node *) malloc(sizeof(struct vary_node));
+	
+	strcpy(node->name, op[j].op.vary.p->name);
+	node->value = op[j].op.vary.start_val + percent * (op[j].op.vary.end_val - op[j].op.vary.start_val);
+	node->next = top;
+	
+	top = node;
+      }
+    } 
+    
+    frames[i] = top;
+  } 
+  return frames;
 }
 
 
@@ -175,11 +233,42 @@ void my_main() {
   g.green = 0;
   g.blue = 0;
 
+  first_pass();
+
+  struct vary_node ** knob_values = second_pass();
+
+  extern int frames;
+
+  int k;
+  if (frames > 1) {
+
+    for(k = 0; k < frames; k++) {
+      printf("frame %d\n", k);
+
+      struct vary_node * top = knob_values[k];
+      while (top != NULL) {
+	set_value(lookup_symbol(top->name), top->value);
+	printf("Knob %s set to %f\n", lookup_symbol(top->name), top->value );
+	top = top->next;
+      }
+    }
+  }
+
   for (i=0;i<lastop;i++) {
 
     printf("%d: ",i);
       switch (op[i].opcode)
 	{
+	case SET:
+	  set_value(op[i].op.set.p->name, op[i].op.set.p->s.value);
+	  break;
+	case SETKNOBS:;
+	  struct vary_node * top = knob_values[k];
+	  while(top != NULL){
+	    set_value(lookup_symbol(top->name), op[i].op.setknobs.value);
+	    top = top->next;
+	  }
+	  break;	  
 	case SPHERE:
 	  printf("Sphere: %6.2f %6.2f %6.2f r=%6.2f",
 		 op[i].op.sphere.d[0],op[i].op.sphere.d[1],
