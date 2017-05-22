@@ -237,7 +237,7 @@ void my_main() {
 
   struct vary_node ** knob_values = second_pass();
 
-  extern int frames;
+  int frames;
 
   int k;
   if (frames > 1) {
