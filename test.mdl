@@ -30,6 +30,8 @@ line lkon 1 2 3 10 20 30
 line lkon 1 2 3 csb1 10 20 30
 line lkon 1 2 3 10 20 30 ccsss
 line lkon 1 2 3 zzccscscs 10 20 30  cscscsc
+scale 10 10 10
+move 0 0 0
 mesh :filename1
 mesh kons :filename2
 scale .2 3.2 4.2 kooo

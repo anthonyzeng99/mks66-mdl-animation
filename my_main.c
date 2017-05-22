@@ -422,5 +422,15 @@ void my_main() {
 	  break;
     }
       printf("\n");
+      char dir_name[300];
+      sprintf(dir_name, "anim/%s%03d", name, i);
+      save_extension(t, dir_name);
+      printf("Frame #%d saved as %s\n", i, dir_name);
+      // reset
+      tmp->lastcol = 0;
+      systems = new_stack();
+      clear_screen(t);
     }
+
+  
 }
